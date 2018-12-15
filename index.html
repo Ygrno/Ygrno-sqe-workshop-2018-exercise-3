@@ -1,62 +1,104 @@
 <!DOCTYPE html>
 <html lang="en">
-    <head>
-        <meta charset="UTF-8">
+<head>
+    <meta charset="UTF-8">
 
-        <style>
-            table {
-                width: 100%;
-                height: 100%;
-            }
+    <style>
+        table {
+            width: 100%;
+            height: 50%;
+            justify-content: center;
+            align-items: center;
+        }
+        table, th, td {
+            /*border: 1px solid black;*/
+            justify-content: center;
+            align-items: center;
+            border-collapse: collapse;
 
-            .textAreaWrapper {
-                width: 100%;
-                height: 80vh;
-            }
+        }
+        .textAreaWrapper {
+            width: 100%;
+            height: 80vh;
+        }
+        textarea {
+            width: 80%;
+            height: 75%;
+        }
+    </style>
+</head>
+<body>
+<table align="center">
+    <tr>
+        <td align="center">
+            <div>
+                <label>
+                            <span style="font-size: 32pt">
+                                Enter code here
+                            </span>
+                </label>
+            </div>
+        </td>
 
-            textarea {
-                width: 80%;
-                height: 95%;
-            }
-        </style>
-    </head>
-    <body>
-        <table>
-            <tr>
-                <td>
-                    <div>
-                        <label>Enter code here</label>
-                    </div>
-                </td>
-                <td>
-                    <div>
-                        <label>Parsed code here</label>
-                    </div>
-                </td>
-            </tr>
-            <tr>
-                <td>
-                    <div class="textAreaWrapper">
-                        <textarea id="codePlaceholder" title="Enter code here"></textarea>
-                    </div>
-                </td>
-                <td>
-                    <div class="textAreaWrapper">
-                        <textarea id="parsedCode" title="Parse code"></textarea>
-                    </div>
-                </td>
-            </tr>
-            <tr>
-                <td>
-                    <div>
-                        <button id="codeSubmissionButton">Parse code</button>
-                    </div>
-                </td>
-                <td>
-                </td>
-            </tr>
-        </table>
+        <td align="center">
+            <div>
+                <label>
+                            <span style="font-size: 24pt">
+                                Enter function's input here
+                            </span>
+                </label>
+            </div>
+        </td>
 
-        <script src="dist/bundle.js"></script>
-    </body>
+    </tr>
+
+
+    <tr id="sol" align="center">
+
+        <td>
+            <div class="textAreaWrapper">
+                <textarea id="codePlaceholder" title="Enter code here" ></textarea>
+            </div>
+        </td>
+
+        <td>
+            <div class="textAreaWrapper">
+                <textarea id="function_input" title="Enter function's input here"  ></textarea>
+            </div>
+        </td>
+
+    </tr>
+
+
+
+
+
+
+
+    <!--<tr align="center">-->
+    <!--<td>-->
+    <!--<div class="textAreaWrapper">-->
+    <!--<textarea id="parsedCode" title="Enter code here" ></textarea>-->
+    <!--</div>-->
+    <!--</td>-->
+    <!--</tr>-->
+
+</table>
+<table>
+
+    <tr>
+        <td align="center">
+            <div>
+                <button id="codeSubmissionButton">
+                            <span style="font-size: 20pt">
+                            Convert
+                                </span>
+                </button>
+            </div>
+        </td>
+    </tr>
+
+</table>
+<script src="dist/bundle.js"></script>
+</body>
 </html>
