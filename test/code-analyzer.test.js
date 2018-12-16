@@ -246,7 +246,7 @@ function Test16(){
         let codeToParse = 'function foo(x, y, z){\n' + '    let a = x + 1;\n' + '    let b = a + y;\n' + '    let c = 0;\n' + '    \n' + '    if (b < z) {\n' + '        c = c + 5;\n' + '        return x + y + z + c;\n' + '    } else if (b < z * 2) {\n' + '        c = c + x + 5;\n' + '        return x + y + z + c;\n' + '    } else {\n' + '        c = c + z + 5;\n' + '        return x + y + z + c;\n' + '    }\n' + '}\n';
         let parsedCode = parseCode_line(codeToParse);
         let html_string = EvalStatements(SymbolicSubstitute(parsedCode),'1, 2, 3');
-        assert.equal(html_string,'<pre>function foo(x, y, z) {\n <table bgcolor="red"> <tr><td>if (x + 1 + y < z)</td></tr></table> {\nreturn x + y + z + (0 + 5);\n}\n<table bgcolor="green"> <tr><td>else if (x + 1 + y < z * 2)</td></tr></table> {\nreturn x + y + z + (0 + x + 5);\n}\nelse {\nreturn x + y + z + (0 + z + 5);\n}\n\n} </pre>');
+        assert.equal(html_string,'<pre>function foo(x, y, z) {\n' + '<span style="background-color: #ff000e">    if (x + 1 + y < z) {</span>\n' + '        return x + y + z + (0 + 5);\n' + '<span style="background-color: #37ff00">    } else if (x + 1 + y < z * 2) {</span>\n' + '        return x + y + z + (0 + x + 5);\n' + '    } else {\n' + '        return x + y + z + (0 + z + 5);\n' + '    }\n' + '}\n' + '</pre>');
     });
 }
 
@@ -267,7 +267,7 @@ function Test17(){
             '}\n';
         let parsedCode = parseCode_line(codeToParse);
         let html_string = EvalStatements(SymbolicSubstitute(parsedCode),'0, 1, 7');
-        assert.equal(html_string,'<pre>function foo(x, y, z) {\n <table bgcolor="red"> <tr><td>if (x + 1 + y < x + 1)</td></tr></table> y = x + (x + 1) + 0 - 8;\n\nwhile (x + 1 < z) {\n    z = (x + 1 + (x + 1 + y)) * 2;\n}\nreturn z;\n\n\n} </pre>');
+        assert.equal(html_string,'<pre>function foo(x, y, z) {\n' + '<span style="background-color: #ff000e">    if (x + 1 + y < x + 1)</span>\n' + '        y = x + (x + 1) + 0 - 8;\n' + '    while (x + 1 < z) {\n' + '        z = (x + 1 + (x + 1 + y)) * 2;\n' + '    }\n' + '    return z;\n' + '}\n' + '</pre>');
     });
 }
 
@@ -293,7 +293,7 @@ function Test19(){
             '}\n';
         let parsedCode = parseCode_line(codeToParse);
         let html_string = EvalStatements(SymbolicSubstitute(parsedCode),'5');
-        assert.equal(html_string,'<pre>function foo(x) {\n <table bgcolor="green"> <tr><td>if (x === 5)</td></tr></table> {\nreturn x + y + z + (c + 5);\n}\n<table bgcolor="white"> <tr><td>else if (x < 5)</td></tr></table> {\nreturn x + y + z + (c + x + 5);\n}\nelse {\nreturn x + y + z + (c + z + 5);\n}\n\n} </pre>');
+        assert.equal(html_string,'<pre>function foo(x) {\n' + '<span style="background-color: #37ff00">    if (x === 5) {</span>\n' + '        return x + y + z + (c + 5);\n' + '    } else if (x < 5) {\n' + '        return x + y + z + (c + x + 5);\n' + '    } else {\n' + '        return x + y + z + (c + z + 5);\n' + '    }\n' + '}\n' + '</pre>');
     });
 }
 
@@ -302,7 +302,7 @@ function Test24(){
         let codeToParse = 'function foo(x){if(x == 5) return x;}';
         let parsedCode = parseCode_line(codeToParse);
         let html_string = EvalStatements(SymbolicSubstitute(parsedCode),'5');
-        assert.equal(html_string,'<pre>function foo(x) {\n <table bgcolor="green"> <tr><td>if (x == 5)</td></tr></table> return x;\n\n\n\n} </pre>');
+        assert.equal(html_string,'<pre>function foo(x) {\n' + '<span style="background-color: #37ff00">    if (x == 5)</span>\n' + '        return x;\n' + '}\n' + '</pre>');
     });
 }
 
@@ -319,7 +319,7 @@ function Test25(){
             '}\n';
         let parsedCode = parseCode_line(codeToParse);
         let html_string = EvalStatements(SymbolicSubstitute(parsedCode),'5');
-        assert.equal(html_string,'<pre>function foo(x) {\n <table bgcolor="red"> <tr><td>if (x == 7)</td></tr></table> {\nreturn x;\n}\n<table bgcolor="red"> <tr><td>else if (x == 8)</td></tr></table> {\nreturn x;\n}\nelse {\nreturn x;\n}\n\n} </pre>');
+        assert.equal(html_string,'<pre>function foo(x) {\n' + '<span style="background-color: #ff000e">    if (x == 7) {</span>\n' + '        return x;\n' + '<span style="background-color: #ff000e">    } else if (x == 8) {</span>\n' + '        return x;\n' + '    } else {\n' + '        return x;\n' + '    }\n' + '}\n' + '</pre>');
     });
 }
 
@@ -337,7 +337,7 @@ function Test26(){
             '}\n';
         let parsedCode = parseCode_line(codeToParse);
         let html_string = EvalStatements(SymbolicSubstitute(parsedCode),'5');
-        assert.equal(html_string,'<pre>function foo(x) {\n <table bgcolor="green"> <tr><td>if (x === 5)</td></tr></table> {\n<table bgcolor="green"> <tr><td>if (x === 5)</td></tr></table> {\n<table bgcolor="red"> <tr><td>if (x === 7)</td></tr></table> return x;\n\n<table bgcolor="green"> <tr><td>else if (x === 5)</td></tr></table> return x;\n\n<table bgcolor="white"> <tr><td>else if (x === 8)</td></tr></table> return x;\n\nelse return x;\n}\n}\n\n\n} </pre>');
+        assert.equal(html_string,'<pre>function foo(x) {\n' + '<span style="background-color: #37ff00">    if (x === 5) {</span>\n' + '<span style="background-color: #37ff00">        if (x === 5) {</span>\n' + '<span style="background-color: #ff000e">            if (x === 7)</span>\n' + '                return x;\n' + '<span style="background-color: #37ff00">            else if (x === 5)</span>\n' + '                return x;\n' + '            else if (x === 8)\n' + '                return x;\n' + '            else\n' + '                return x;\n' + '        }\n' + '    }\n' + '}\n' + '</pre>');
     });
 }
 
