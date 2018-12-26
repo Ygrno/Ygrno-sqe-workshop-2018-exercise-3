@@ -79,7 +79,9 @@ function VD_Subs(vd,env){
     let declarations = vd['declarations'];
     for(let j = 0 ; j < declarations.length ; j++){
         let variable = esco.generate(declarations[j]['id']);
-        let value_string = esco.generate(declarations[j]['init']);
+        let value_string;
+        if(declarations[j]['init'] != null) value_string = esco.generate(declarations[j]['init']);
+        else value_string = 'null';
         let value_sub_string = MakeSubstitution(value_string,env);
         env_setValue(variable,value_sub_string,env,'local');
     }
@@ -202,7 +204,9 @@ function ENV_State_handler(state) {
     for (let i = 0; i < state.length; i++) {
         Builder(state[i], arr, 5);
         if(arr[0]['type'] === 'variable declaration' || arr[0]['type'] === 'assignment expression') {
-            let value_string = arr[0]['value'].split('(').join(' ( ').split(')').join(' ) ');
+            let value_string;
+            if(arr[0]['value'] != null) value_string = arr[0]['value'].split('(').join(' ( ').split(')').join(' ) ');
+            value_string = 'null';
             let value_sub = MakeSubstitution(value_string,env_global);
             env_setValue(arr[0]['name'], value_sub,env_global,'global');
         }
