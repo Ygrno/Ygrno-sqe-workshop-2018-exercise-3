@@ -5,6 +5,13 @@ import * as esco from 'escodegen';
 let function_exp, above_exp = [], down_exp = [];
 let env_global = [];
 
+function SymbolicSubstitute(ParsedCode){
+    Clear();
+    if(ParsedCode['type'] !== 'Program') return;
+    Code_Extractor(ParsedCode);
+    Build_Environment();
+    return Substitution();
+}
 
 function Variable_table(variable, value, type){
     this.variable = variable;
@@ -35,15 +42,6 @@ function env_setValue(variable,value,env,type){
         }
     }
     if(!found) env.push(new Variable_table(variable,value,type));
-}
-
-
-function SymbolicSubstitute(ParsedCode){
-    Clear();
-    if(ParsedCode['type'] !== 'Program') return;
-    Code_Extractor(ParsedCode);
-    Build_Environment();
-    return Substitution();
 }
 
 function Clear(){
@@ -160,7 +158,6 @@ function WhileSubs(whileExp, env){
 }
 
 
-
 function Substitution(){
     let func_clone = JSON.parse(JSON.stringify(function_exp));
     let body_change = func_clone['body'];
@@ -229,4 +226,4 @@ function Build_Environment(){
     ENV_param();
 }
 
-export {SymbolicSubstitute, Variable_table,CreateSingleExp};
+export {SymbolicSubstitute, Variable_table,CreateSingleExp,FixArray};
