@@ -245,7 +245,7 @@ function Test16(){
     it('Test 16', () => {
         let codeToParse = 'function foo(x, y, z){\n' + '    let a = x + 1;\n' + '    let b = a + y;\n' + '    let c = 0;\n' + '    \n' + '    if (b < z) {\n' + '        c = c + 5;\n' + '        return x + y + z + c;\n' + '    } else if (b < z * 2) {\n' + '        c = c + x + 5;\n' + '        return x + y + z + c;\n' + '    } else {\n' + '        c = c + z + 5;\n' + '        return x + y + z + c;\n' + '    }\n' + '}\n';
         let parsedCode = parseCode_line(codeToParse);
-        let html_string = EvalStatements(SymbolicSubstitute(parsedCode),'1, 2, 3');
+        let html_string = EvalStatements(SymbolicSubstitute(parsedCode),'1, 2, 3')[0];
         assert.equal(html_string,'<pre>function foo(x, y, z) {\n' + '<span style="background-color: #ff000e">    if (x + 1 + y < z) {</span>\n' + '        return x + y + z + (0 + 5);\n' + '<span style="background-color: #37ff00">    } else if (x + 1 + y < z * 2) {</span>\n' + '        return x + y + z + (0 + x + 5);\n' + '    } else {\n' + '        return x + y + z + (0 + z + 5);\n' + '    }\n' + '}\n' + '</pre>');
     });
 }
@@ -266,7 +266,7 @@ function Test17(){
             '    return z;\n' +
             '}\n';
         let parsedCode = parseCode_line(codeToParse);
-        let html_string = EvalStatements(SymbolicSubstitute(parsedCode),'0, 1, 7');
+        let html_string = EvalStatements(SymbolicSubstitute(parsedCode),'0, 1, 7')[0];
         assert.equal(html_string,'<pre>function foo(x, y, z) {\n' + '<span style="background-color: #ff000e">    if (x + 1 + y < x + 1)</span>\n' + '        y = x + (x + 1) + 0 - 8;\n' + '    while (x + 1 < z) {\n' + '        z = (x + 1 + (x + 1 + y)) * 2;\n' + '    }\n' + '    return z;\n' + '}\n' + '</pre>');
     });
 }
@@ -292,7 +292,7 @@ function Test19(){
             '    }\n' +
             '}\n';
         let parsedCode = parseCode_line(codeToParse);
-        let html_string = EvalStatements(SymbolicSubstitute(parsedCode),'5');
+        let html_string = EvalStatements(SymbolicSubstitute(parsedCode),'5')[0];
         assert.equal(html_string,'<pre>function foo(x) {\n' + '<span style="background-color: #37ff00">    if (x === 5) {</span>\n' + '        return x + y + z + (c + 5);\n' + '    } else if (x < 5) {\n' + '        return x + y + z + (c + x + 5);\n' + '    } else {\n' + '        return x + y + z + (c + z + 5);\n' + '    }\n' + '}\n' + '</pre>');
     });
 }
@@ -301,7 +301,7 @@ function Test24(){
     it('Test 24', () => {
         let codeToParse = 'function foo(x){if(x == 5) return x;}';
         let parsedCode = parseCode_line(codeToParse);
-        let html_string = EvalStatements(SymbolicSubstitute(parsedCode),'5');
+        let html_string = EvalStatements(SymbolicSubstitute(parsedCode),'5')[0];
         assert.equal(html_string,'<pre>function foo(x) {\n' + '<span style="background-color: #37ff00">    if (x == 5)</span>\n' + '        return x;\n' + '}\n' + '</pre>');
     });
 }
@@ -318,7 +318,7 @@ function Test25(){
             '    }\n' +
             '}\n';
         let parsedCode = parseCode_line(codeToParse);
-        let html_string = EvalStatements(SymbolicSubstitute(parsedCode),'5');
+        let html_string = EvalStatements(SymbolicSubstitute(parsedCode),'5')[0];
         assert.equal(html_string,'<pre>function foo(x) {\n' + '<span style="background-color: #ff000e">    if (x == 7) {</span>\n' + '        return x;\n' + '<span style="background-color: #ff000e">    } else if (x == 8) {</span>\n' + '        return x;\n' + '    } else {\n' + '        return x;\n' + '    }\n' + '}\n' + '</pre>');
     });
 }
@@ -336,10 +336,60 @@ function Test26(){
             '}\n' +
             '}\n';
         let parsedCode = parseCode_line(codeToParse);
-        let html_string = EvalStatements(SymbolicSubstitute(parsedCode),'5');
+        let html_string = EvalStatements(SymbolicSubstitute(parsedCode),'5')[0];
         assert.equal(html_string,'<pre>function foo(x) {\n' + '<span style="background-color: #37ff00">    if (x === 5) {</span>\n' + '<span style="background-color: #37ff00">        if (x === 5) {</span>\n' + '<span style="background-color: #ff000e">            if (x === 7)</span>\n' + '                return x;\n' + '<span style="background-color: #37ff00">            else if (x === 5)</span>\n' + '                return x;\n' + '            else if (x === 8)\n' + '                return x;\n' + '            else\n' + '                return x;\n' + '        }\n' + '    }\n' + '}\n' + '</pre>');
     });
 }
+
+function Test27(){
+    it('Test 27', () => {
+        let codeToParse = 'function A(x){\n' +
+            'let b = x + 1;\n' +
+            'let c = b * b + 2;\n' +
+            '\n' +
+            'while(b > 1){\n' +
+            'if(c > b) return x;\n' +
+            '\n' +
+            '}\n' +
+            '\n' +
+            '}';
+        let parsedCode = parseCode_line(codeToParse);
+        let html_string = EvalStatements(SymbolicSubstitute(parsedCode),'0')[0];
+        assert.equal(html_string,'<pre>function A(x) {\n    while (x + 1 > 1) {\n        if ((x + 1) * (x + 1) + 2 > x + 1)\n            return x;\n    }\n}\n</pre>');
+    });
+}
+
+function Test28(){
+    it('Test 28', () => {
+        let codeToParse = 'function A(x,y){\n' +
+            'let a;\n' +
+            '\n' +
+            'if(x > y) y = x;\n' +
+            'else if (x < y) x = y;\n' +
+            '\n' +
+            '}';
+        let parsedCode = parseCode_line(codeToParse);
+        let html_string = EvalStatements(SymbolicSubstitute(parsedCode),'1,2')[0];
+        assert.equal(html_string,'<pre>function A(x, y) {\n<span style="background-color: #ff000e">    if (x > y)</span>\n        y = x;\n<span style="background-color: #37ff00">    else if (x < y)</span>\n        x = y;\n}\n</pre>');
+    });
+}
+
+function Test29(){
+    it('Test 29', () => {
+        let codeToParse = 'let b;\n' +
+            'function A(x,y){\n' +
+            'let a;\n' +
+            '\n' +
+            'if(x > y) y = x;\n' +
+            'else if (x < y) x = y;\n' +
+            '\n' +
+            '}';
+        let parsedCode = parseCode_line(codeToParse);
+        let html_string = EvalStatements(SymbolicSubstitute(parsedCode),'1,2')[0];
+        assert.equal(html_string,'<pre>function A(x, y) {\n<span style="background-color: #ff000e">    if (x > y)</span>\n        y = x;\n<span style="background-color: #37ff00">    else if (x < y)</span>\n        x = y;\n}\n</pre>');
+    });
+}
+
 
 
 
@@ -382,4 +432,7 @@ describe('Colored Html Code', ()=> {
     Test24();
     Test25();
     Test26();
+    Test27();
+    Test28();
+    Test29();
 });
