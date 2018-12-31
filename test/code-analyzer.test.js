@@ -1,8 +1,10 @@
 import assert from 'assert';
 import {parseCode, parseCode_line, Builder} from '../src/js/code-analyzer';
+import {Esgraph} from '../src/js/dot_creator';
 import {SymbolicSubstitute,CreateSingleExp} from '../src/js/symbolic-substitution';
-import {EvalStatements} from '../src/js/eval-statements';
+import {ColorAssignment, EvalStatements, ExtractFunctionFromProgram} from '../src/js/eval-statements';
 import * as esco from 'escodegen';
+import {Transform_CFG} from '../src/js/cfg-transformation';
 
 
 function Test1() {
@@ -319,7 +321,7 @@ function Test25(){
             '}\n';
         let parsedCode = parseCode_line(codeToParse);
         let html_string = EvalStatements(SymbolicSubstitute(parsedCode),'5')[0];
-        assert.equal(html_string,'<pre>function foo(x) {\n' + '<span style="background-color: #ff000e">    if (x == 7) {</span>\n' + '        return x;\n' + '<span style="background-color: #ff000e">    } else if (x == 8) {</span>\n' + '        return x;\n' + '    } else {\n' + '        return x;\n' + '    }\n' + '}\n' + '</pre>');
+        assert.equal(html_string,'<pre>function foo(x) {\n<span style="background-color: #ff000e">    if (x == 7) {</span>\n        return x;\n<span style="background-color: #ff000e">    } else if (x == 8) {</span>\n<span style="background-color: #37ff00">        return x;</span>\n    } else {\n        return x;\n    }\n}\n</pre>');
     });
 }
 
@@ -390,6 +392,131 @@ function Test29(){
     });
 }
 
+function Test30(){
+    it('Test 30', () => {
+        let codeToParse = 'let b;\n' + 'function A(x,y){\n' + 'let a;\n' + '\n' + 'if(x > y) y = x;\n' + 'else if (x < y) x = y;\n' + '\n' + '}';
+        let parsedCode = parseCode_line(codeToParse);
+        let extracted = ExtractFunctionFromProgram(parsedCode);
+        assert.equal(JSON.stringify(extracted),'{"type":"FunctionDeclaration","id":{"type":"Identifier","name":"A","loc":{"start":{"line":2,"column":9},"end":{"line":2,"column":10}}},"params":[{"type":"Identifier","name":"x","loc":{"start":{"line":2,"c' +
+            'olumn":11},"end":{"line":2,"column":12}}},{"type":"Identifier","name":"y","loc":{"start":{"line":2,"column":13},"end":{"line":2,"column":14}}}],"body":{"type":"BlockStatement","body":[{"type":"VariableDeclaration","declaration' +
+            's":[{"type":"VariableDeclarator","id":{"type":"Identifier","name":"a","loc":{"start":{"line":3,"column":4},"end":{"line":3,"column":5}}},"init":null,"loc":{"start":{"line":3,"column":4},"end":{"line":3,"column":5}}}],"kind' +
+            '":"let","loc":{"start":{"line":3,"column":0},"end":{"line":3,"column":6}}},{"type":"IfStatement","test":{"type":"BinaryExpression","operator":">","left":{"type":"Identifier","name":"x","loc":{"start":{"line":5,"column":' +
+            '3},"end":{"line":5,"column":4}}},"right":{"type":"Identifier","name":"y","loc":{"start":{"line":5,"column":7},"end":{"line":5,"column":8}}},"loc":{"start":{"line":5,"column":3},"end":{"line":5,"column":8}}},"consequent":{' +
+            '"type":"ExpressionStatement","expression":{"type":"AssignmentExpression","operator":"=","left":{"type":"Identifier","name":"y","loc":{"start":{"line":5,"column":10},"end":{"line":5,"column":11}}},"right":{"type":"Identifier",' +
+            '"name":"x","loc":{"start":{"line":5,"column":14},"end":{"line":5,"column":15}}},"loc":{"start":{"line":5,"column":10},"end":{"line":5,"column":15}}},"loc":{"start":{"line":5,"column":10},"end":{"line":5,"column":16}}},"al' +
+            'ternate":{"type":"IfStatement","test":{"type":"BinaryExpression","operator":"<","left":{"type":"Identifier","name":"x","loc":{"start":{"line":6,"column":9},"end":{"line":6,"column":10}}},"right":{"type":"Identifier","name' +
+            '":"y","loc":{"start":{"line":6,"column":13},"end":{"line":6,"column":14}}},"loc":{"start":{"line":6,"column":9},"end":{"line":6,"column":14}}},"consequent":{"type":"ExpressionStatement","expression":{"type":"AssignmentExpressio' +
+            'n","operator":"=","left":{"type":"Identifier","name":"x","loc":{"start":{"line":6,"column":16},"end":{"line":6,"column":17}}},"right":{"type":"Identifier","name":"y","loc":{"start":{"line":6,"column":20},"end":{"line"' +
+            ':6,"column":21}}},"loc":{"start":{"line":6,"column":16},"end":{"line":6,"column":21}}},"loc":{"start":{"line":6,"column":16},"end":{"line":6,"column":22}}},"alternate":null,"loc":{"start":{"line":6,"column":5},"end":{"line":' +
+            '6,"column":22}}},"loc":{"start":{"line":5,"column":0},"end":{"line":6,"column":22}}}],"loc":{"start":{"line":2,"column":15},"end":{"line":8,"column":1}},"color":"green"},"generator":false,"expression":false,"async":false,"loc"' +
+            ':{"start":{"line":2,"column":0},"end":{"line":8,"column":1}}}');
+    });
+}
+
+
+function Test31() {
+    it('Test 31', () => {
+        let codeToParse = 'function foo(x, y, z){\n' + '    let a = x + 1;\n' + '    let b = a + y;\n' + '    let c = 0;\n' + '    \n' + '    if (b < z) {\n' + '        c = c + 5;\n' + '    } else if (b < z * 2) {\n' + '        c = c + x + 5;\n' + '    } else {\n' + '        c = c + z + 5;\n' + '    }\n' + '    \n' + '    return c;\n' + '}\n';
+        let parsedCode = parseCode_line(codeToParse);
+        let parsedCode_sym = SymbolicSubstitute(parsedCode);
+        let parsedCode_sym_eval = EvalStatements(parsedCode_sym, '1,2,3')[1];
+        parsedCode = ColorAssignment(parsedCode, parsedCode_sym_eval);
+        let cfg = Esgraph(ExtractFunctionFromProgram(parsedCode)['body']);
+        let dot_string = Transform_CFG(cfg, '');
+        let string = 'digraph G {' + dot_string + '}';
+        assert.equal(string,'digraph G {n1 [label = "~1~\na = x + 1" color = "green" shape = "square"]\nn2 [label = "~2~\nb = a + y" color = "green" shape = "square"]\nn3 [label = "~3~\nc = 0" color = "green" shape = "square"]\nn4 [label = "~4~\nb < z" color' +
+            ' = "green" shape = "diamond"]\nn5 [label = "~5~\nc = c + 5" color = "black" shape = "square"]\nn6 [label = "~6~\nreturn c" color = "green" shape = "square"]\nn7 [label = "~7~\nb < z * 2" color = "green" shape = "diamond"]\nn8 [label = "~8~\nc = ' +
+            'c + x + 5" color = "green" shape = "square"]\nn9 [label = "~9~\nc = c + z + 5" color = "black" shape = "square"]\nn1 -> n2\nn2 -> n3\nn3 -> n4\nn4 -> n5[label = "true"]\nn10 [label = " " shape = "circle" color = "red"]\nn5 -> n10\nn8 -> n10\nn9 -> n' +
+            '10\nn10 -> n6\nn4 -> n7[label = "false"]\nn7 -> n8[label = "true"]\nn7 -> n9[label = "false"]\n}');
+    });
+}
+
+function Test32() {
+    it('Test 32', () => {
+        let codeToParse = 'function foo(x, y, z){\n' + '   let a = x + 1;\n' + '   let b = a + y;\n' + '   let c = 0;\n' + '   \n' + '   while (a < z) {\n' + '       c = a + b;\n' + '       z = c * 2;\n' + '       a = a + 1;\n' + '   }\n' + '   \n' + '   return z;\n' + '}\n';
+        let parsedCode = parseCode_line(codeToParse);
+        let parsedCode_sym = SymbolicSubstitute(parsedCode);
+        let parsedCode_sym_eval = EvalStatements(parsedCode_sym, '1,2,3')[1];
+        parsedCode = ColorAssignment(parsedCode, parsedCode_sym_eval);
+        let cfg = Esgraph(ExtractFunctionFromProgram(parsedCode)['body']);
+        let dot_string = Transform_CFG(cfg, '');
+        let string = 'digraph G {' + dot_string + '}';
+        assert.equal(string,'digraph G {n1 [label = "~1~\na = x + 1" color = "green" shape = "square"]\nn2 [label = "~2~\nb = a + y" color = "green" shape = "square"]\nn3 [label = "~3~\nc = 0" color = "green" shape = "square"]\nn4 [label = "~4~\na < z" color' +
+            ' = "green" shape = "diamond"]\nn5 [label = "~5~\nc = a + b" color = "green" shape = "square"]\nn6 [label = "~6~\nz = c * 2" color = "green" shape = "square"]\nn7 [label = "~7~\na = a + 1" color = "green" shape = "square"]\nn8 [label = "~8~\nretu' +
+            'rn z" color = "green" shape = "square"]\nn1 -> n2\nn2 -> n3\nn9 [label = " " shape = "circle" color = "red"]\nn3 -> n9\nn7 -> n9\nn9 -> n4\nn4 -> n5[label = "true"]\nn5 -> n6\nn6 -> n7\nn4 -> n8[label = "false"]\n}');
+    });
+}
+
+function Test33() {
+    it('Test 33', () => {
+        let codeToParse = 'function foo(x, y, z){\n' + '    let a = x + 1;\n' + '    let b = a + y;\n' + '    let c = 0, d = 0;\n' + '    \n' + '    if (b < z) {\n' + '        c = c + 5;\n' + '    } else if (b < z * 2) {\n' + '        c = c + x + 5;\n' + '    } else {\n' + '        c = c + z + 5;\n' + '    }\n' + '    \n' + '    return c;\n' + '}\n';
+        let parsedCode = parseCode_line(codeToParse);
+        let parsedCode_sym = SymbolicSubstitute(parsedCode);
+        let parsedCode_sym_eval = EvalStatements(parsedCode_sym, '1,2,3')[1];
+        parsedCode = ColorAssignment(parsedCode, parsedCode_sym_eval);
+        let cfg = Esgraph(ExtractFunctionFromProgram(parsedCode)['body']);
+        let dot_string = Transform_CFG(cfg, '');
+        let string = 'digraph G {' + dot_string + '}';
+        assert.equal(string,'digraph G {n1 [label = "~1~\n' + 'a = x + 1" color = "green" shape = "square"]\n' + 'n2 [label = "~2~\n' + 'b = a + y" color = "green" shape = "square"]\n' + 'n3 [label = "~3~\n' + 'c = 0\n' + 'd = 0" color = "green" shape = "square"]\n' + 'n4 [label = "~4~\n' + 'b < z" color = "green" shape = "diamond"]\n' + 'n5 [label = "~5~\n' + 'c = c + 5" color = "black" shape = "square"]\n' + 'n6 [label = "~6~\n' + 'return c" color = "green" shape = "square"]\n' + 'n7 [label = "~7~\n' + 'b < z * 2" color = "green" shape = "diamond"]\n' + 'n8 [label = "~8~\n' + 'c = c + x + 5" color = "green" shape = "square"]\n' + 'n9 [label = "~9~\n' + 'c = c + z + 5" color = "black" shape = "square"]\n' + 'n1 -> n2\n' + 'n2 -> n3\n' + 'n3 -> n4\n' + 'n4 -> n5[label = "true"]\n' + 'n10 [label = " " shape = "circle" color = "red"]\n' + 'n5 -> n10\n' + 'n8 -> n10\n' + 'n9 -> n10\n' + 'n10 -> n6\n' + 'n4 -> n7[label = "false"]\n' + 'n7 -> n8[label = "true"]\n' + 'n7 -> n9[label = "false"]\n' + '}');
+    });
+}
+
+function Test34() {
+    it('Test 34', () => {
+        let codeToParse = 'function foo(x, y, z){\n' + '    let a = x + 1;\n' + '    let b = a + y;\n' + '    let c = 0, d = 0;\n' + '    \n' + '    if (b < z) {\n' + '        let e = 6;\n' + '        c = c + 5;\n' + '    } else if (b < z * 2) {\n' + '        c = c + x + 5;\n' + '    } else {\n' + '        c = c + z + 5;\n' + '    }\n' + '    \n' + '    return c;\n' + '}';
+        let parsedCode = parseCode_line(codeToParse);
+        let parsedCode_sym = SymbolicSubstitute(parsedCode);
+        let parsedCode_sym_eval = EvalStatements(parsedCode_sym, '1,2,3')[1];
+        parsedCode = ColorAssignment(parsedCode, parsedCode_sym_eval);
+        let cfg = Esgraph(ExtractFunctionFromProgram(parsedCode)['body']);
+        let dot_string = Transform_CFG(cfg, '');
+        let string = 'digraph G {' + dot_string + '}';
+        assert.equal(string,'digraph G {n1 [label = "~1~\n' + 'a = x + 1" color = "green" shape = "square"]\n' + 'n2 [label = "~2~\n' + 'b = a + y" color = "green" shape = "square"]\n' + 'n3 [label = "~3~\n' + 'c = 0\n' + 'd = 0" color = "green" shape = "square"]\n' + 'n4 [label = "~4~\n' + 'b < z" color = "green" shape = "diamond"]\n' + 'n5 [label = "~5~\n' + 'e = 6" color = "black" shape = "square"]\n' + 'n6 [label = "~6~\n' + 'c = c + 5" color = "black" shape = "square"]\n' + 'n7 [label = "~7~\n' + 'return c" color = "green" shape = "square"]\n' + 'n8 [label = "~8~\n' + 'b < z * 2" color = "green" shape = "diamond"]\n' + 'n9 [label = "~9~\n' + 'c = c + x + 5" color = "green" shape = "square"]\n' + 'n10 [label = "~10~\n' + 'c = c + z + 5" color = "black" shape = "square"]\n' + 'n1 -> n2\n' + 'n2 -> n3\n' + 'n3 -> n4\n' + 'n4 -> n5[label = "true"]\n' + 'n5 -> n6\n' + 'n11 [label = " " shape = "circle" color = "red"]\n' + 'n6 -> n11\n' + 'n9 -> n11\n' + 'n10 -> n11\n' + 'n11 -> n7\n' + 'n4 -> n8[label = "false"]\n' + 'n8 -> n9[label = "true"]\n' + 'n8 -> n10[label = "false"]\n' + '}');
+    });
+}
+
+function Test35() {
+    it('Test 35', () => {
+        let codeToParse = 'function foo(x){\n' + 'while(x > 5){\n' + 'x = x + 1;\n' + 'if(x > 5){\n' + 'x = x + 2;\n' + '}\n' + 'x = x + 1;\n' + '}\n' + '\n' + 'return x;\n' + '\n' + '}';
+        let parsedCode = parseCode_line(codeToParse);
+        let parsedCode_sym = SymbolicSubstitute(parsedCode);
+        let parsedCode_sym_eval = EvalStatements(parsedCode_sym, '6')[1];
+        parsedCode = ColorAssignment(parsedCode, parsedCode_sym_eval);
+        let cfg = Esgraph(ExtractFunctionFromProgram(parsedCode)['body']);
+        let dot_string = Transform_CFG(cfg, '');
+        let string = 'digraph G {' + dot_string + '}';
+        assert.equal(string,'digraph G {n1 [label = "~1~\n' + 'x > 5" color = "green" shape = "diamond"]\n' + 'n2 [label = "~2~\n' + 'x = x + 1" color = "green" shape = "square"]\n' + 'n3 [label = "~3~\n' + 'x > 5" color = "green" shape = "diamond"]\n' + 'n4 [label = "~4~\n' + 'x = x + 2" color = "green" shape = "square"]\n' + 'n5 [label = "~5~\n' + 'x = x + 1" color = "green" shape = "square"]\n' + 'n6 [label = "~6~\n' + 'return x" color = "green" shape = "square"]\n' + 'n5 -> n1\n' + 'n1 -> n2[label = "true"]\n' + 'n2 -> n3\n' + 'n3 -> n4[label = "true"]\n' + 'n7 [label = " " shape = "circle" color = "red"]\n' + 'n3 -> n7[label = "false"]\n' + 'n4 -> n7\n' + 'n7 -> n5\n' + 'n1 -> n6[label = "false"]\n' + '}');
+    });
+}
+
+function Test36() {
+    it('Test 36', () => {
+        let codeToParse = 'function foo(x){\n' + '\n' + 'if(x>4) x = x + 1;\n' + 'else if(x<4) x = x + 2;\n' + '\n' + 'return x;\n' + '}';
+        let parsedCode = parseCode_line(codeToParse);
+        let parsedCode_sym = SymbolicSubstitute(parsedCode);
+        let parsedCode_sym_eval = EvalStatements(parsedCode_sym, '6')[1];
+        parsedCode = ColorAssignment(parsedCode, parsedCode_sym_eval);
+        let cfg = Esgraph(ExtractFunctionFromProgram(parsedCode)['body']);
+        let dot_string = Transform_CFG(cfg, '');
+        let string = 'digraph G {' + dot_string + '}';
+        assert.equal(string,'digraph G {n1 [label = "~1~\n' + 'x > 4" color = "green" shape = "diamond"]\n' + 'n2 [label = "~2~\n' + 'x = x + 1" color = "green" shape = "square"]\n' + 'n3 [label = "~3~\n' + 'return x" color = "green" shape = "square"]\n' + 'n4 [label = "~4~\n' + 'x < 4" color = "black" shape = "diamond"]\n' + 'n5 [label = "~5~\n' + 'x = x + 2" color = "black" shape = "square"]\n' + 'n1 -> n2[label = "true"]\n' + 'n6 [label = " " shape = "circle" color = "red"]\n' + 'n2 -> n6\n' + 'n4 -> n6[label = "false"]\n' + 'n5 -> n6\n' + 'n6 -> n3\n' + 'n1 -> n4[label = "false"]\n' + 'n4 -> n5[label = "true"]\n' + '}');
+    });
+}
+
+function Test38() {
+    it('Test 38', () => {
+        let codeToParse = 'function foo(x){\n' + 'let a = x;\n' + 'let b = x;\n' + 'if(x>4) \n' + '{\n' + 'x = a + 1;\n' + 'a = x + 1;\n' + 'if (b > 8) x = x + 4;\n' + '}\n' + 'return x;\n' + '}';
+        let parsedCode = parseCode_line(codeToParse);
+        let parsedCode_sym = SymbolicSubstitute(parsedCode);
+        let parsedCode_sym_eval = EvalStatements(parsedCode_sym, '9')[1];
+        parsedCode = ColorAssignment(parsedCode, parsedCode_sym_eval);
+        let cfg = Esgraph(ExtractFunctionFromProgram(parsedCode)['body']);
+        let dot_string = Transform_CFG(cfg, '');
+        let string = 'digraph G {' + dot_string + '}';
+        assert.equal(string,'digraph G {n1 [label = "~1~\n' + 'a = x" color = "green" shape = "square"]\n' + 'n2 [label = "~2~\n' + 'b = x" color = "green" shape = "square"]\n' + 'n3 [label = "~3~\n' + 'x > 4" color = "green" shape = "diamond"]\n' + 'n4 [label = "~4~\n' + 'x = a + 1" color = "green" shape = "square"]\n' + 'n5 [label = "~5~\n' + 'a = x + 1" color = "green" shape = "square"]\n' + 'n6 [label = "~6~\n' + 'b > 8" color = "green" shape = "diamond"]\n' + 'n7 [label = "~7~\n' + 'x = x + 4" color = "green" shape = "square"]\n' + 'n8 [label = "~8~\n' + 'return x" color = "green" shape = "square"]\n' + 'n1 -> n2\n' + 'n2 -> n3\n' + 'n3 -> n4[label = "true"]\n' + 'n4 -> n5\n' + 'n5 -> n6\n' + 'n6 -> n7[label = "true"]\n' + 'n9 [label = " " shape = "circle" color = "red"]\n' + 'n3 -> n9[label = "false"]\n' + 'n6 -> n9[label = "false"]\n' + 'n7 -> n9\n' + 'n9 -> n8\n' + '}');
+    });
+}
+
 
 
 
@@ -436,3 +563,19 @@ describe('Colored Html Code', ()=> {
     Test28();
     Test29();
 });
+
+describe('ExtractFunctionFromProgram', ()=> {
+    Test30();
+});
+
+describe('ColoredGraph', ()=> {
+    Test31();
+    Test32();
+    Test33();
+    Test34();
+    Test35();
+    Test36();
+    Test38();
+});
+
+

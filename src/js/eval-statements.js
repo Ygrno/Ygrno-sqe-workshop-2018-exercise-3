@@ -41,6 +41,11 @@ function CreateParamTable(subbed_func,input_vector){
     for(let j = 0; j<parameters.length; j++) ParamTable.push(new Variable_table(esco.generate(parameters[j]),split_by_comma[j],'parameter'));
 }
 
+function alternate_handler(eval_test, if_exp, string_by_line) {
+    if (eval_test === false && if_exp['alternate']['type'] !== 'IfStatement') string_by_line[if_exp['alternate']['loc']['start']['line'] - 2] = '<span style="background-color: #37ff00">' + string_by_line[if_exp['alternate']['loc']['start']['line'] - 2] + '</span>';
+    if (eval_test === false) TraverseForStatements(if_exp['alternate'], string_by_line);
+}
+
 function IfEval(if_exp,string_by_line){
     let test = if_exp['test'];
     let test_string = esco.generate(test);
@@ -55,9 +60,11 @@ function IfEval(if_exp,string_by_line){
     else string_by_line[if_exp['loc']['start']['line']-1] = '<span style="background-color: #ff000e">' + string_by_line[if_exp['loc']['start']['line']-1] + '</span>';
 
     let consequent = if_exp['consequent'];
-    TraverseForStatements(consequent,string_by_line);
+    if(eval_test) TraverseForStatements(consequent,string_by_line);
 
-    if(eval_test === false) TraverseForStatements(if_exp['alternate'],string_by_line);
+    if(if_exp['alternate'] !== null) {
+        alternate_handler(eval_test, if_exp, string_by_line);
+    }
 }
 
 function WhileEval(while_exp,string_by_line){
@@ -67,8 +74,12 @@ function WhileEval(while_exp,string_by_line){
     let test_sub_string = MakeSubstitution(test_string,ParamTable);
     let eval_test = eval(test_sub_string);
     if(eval_test){
+        while_exp['color'] = 'green';
         let while_body = while_exp['body'];
         TraverseForStatements(while_body,string_by_line);
+    }
+    else {
+        while_exp['color'] = 'red';
     }
 }
 
@@ -89,12 +100,11 @@ function MakeSubstitution(string,param_table){
 }
 
 function TraverseForStatements(exp,string_by_line){
-    if(exp !== null) {
-        let e_type = exp['type'];
-        if (e_type === 'BlockStatement') exp['body'].map(x => TraverseForStatements(x,string_by_line));
-        else if (e_type === 'IfStatement') IfEval(exp,string_by_line);
-        else if (e_type === 'WhileStatement') WhileEval(exp,string_by_line);
-    }
+    let e_type = exp['type'];
+    if (e_type === 'BlockStatement') exp['body'].map(x => TraverseForStatements(x,string_by_line));
+    else if (e_type === 'IfStatement') IfEval(exp,string_by_line);
+    else if (e_type === 'WhileStatement') WhileEval(exp,string_by_line);
+
 }
 
 function ExtractFunctionFromProgram(program){
@@ -108,49 +118,62 @@ function ExtractFunctionFromProgram(program){
 }
 
 
-function Color(exp,color){
-    let type = exp['type'];
-    if(type === 'ExpressionStatement')
-    {
-        exp['color'] = color;
-        exp['expression']['color'] = color;
-    }
-
-
-    else exp['color'] = color;
-}
-
-function IfColor(if_exp,sym){
-    if_exp['color'] = sym['color'];
-    let consequent = if_exp['consequent'];
-    if(consequent['type'] === 'BlockStatement'){
-        for(let i = 0; i<consequent['body'].length; i++){
-            Color(consequent['body'][i],if_exp['color']);
+function BlockColor_handle(org_exp,sym_exp,color){
+    org_exp['color'] = sym_exp['color'];
+    let org_exp_body = org_exp['body'], sym_exp_body = sym_exp['body'],k = 0;
+    for(let i = 0; i<sym_exp_body.length; i++){
+        let sym_element = sym_exp_body[i];
+        for(let j = k; j<org_exp_body.length;j++){
+            let org_element = org_exp_body[j];
+            if(sym_element['type'] === org_element['type']){
+                GeneralColorHandler(org_element,sym_element,color);
+                k = j + 1;
+                j = org_exp_body.length;
+            }
+            else{
+                GeneralColorHandler(org_element,sym_element,color);
+            }
         }
     }
-    else if_exp['consequent']['color'] = if_exp['color'];
+    for(let j = k; j<org_exp_body.length; j++) GeneralColorHandler(org_exp_body[j],null,color);
+}
+
+function GeneralColorHandler(org_exp,sym_exp,color){
+    let exp_type = org_exp['type'];
+    if(exp_type === 'BlockStatement') BlockColor_handle(org_exp,sym_exp,color);
+    else if(exp_type === 'IfStatement') IfColor(org_exp,sym_exp);
+    else if(exp_type === 'WhileStatement') WhileColor(org_exp,sym_exp);
+    else if(exp_type === 'ExpressionStatement') {
+        org_exp['color'] = color;
+        org_exp['expression']['color'] = color;
+    }
+    else org_exp['color'] = color;
+}
+
+function WhileColor(while_exp,sym_while_exp){
+    while_exp['color'] = sym_while_exp['color'];
+    while_exp['test']['color'] = while_exp['color'];
+    let body_org = while_exp['body'];
+    let body_sym = sym_while_exp['body'];
+    GeneralColorHandler(body_org,body_sym,while_exp['color']);
+}
+
+function IfColor(if_exp,sym_if_exp){
+    if_exp['color'] = sym_if_exp['color'];
     if_exp['test']['color'] = if_exp['color'];
+    let consequent_org = if_exp['consequent'];
+    let consequent_sym = sym_if_exp['consequent'];
+    GeneralColorHandler(consequent_org,consequent_sym,if_exp['color']);
     if(if_exp['alternate'] !== null)
     {
-        if(if_exp['alternate']['type'] === 'IfStatement') IfColor(if_exp['alternate'],sym['alternate']);
+        if(if_exp['alternate']['type'] === 'IfStatement') IfColor(if_exp['alternate'],sym_if_exp['alternate']);
         else {
             if_exp['alternate']['color'] = if_exp['color'];
         }
     }
 }
 
-function handler(k, program_body, sym_type, sym_program_body, i) {
-    for (let j = k; j < program_body.length; j++) {
-        let org_type = program_body[j]['type'];
-        if (sym_type === org_type) {
-            if (sym_type === 'IfStatement') IfColor(program_body[j], sym_program_body[i]);
-            else if (sym_type === 'ReturnStatement') program_body[j]['color'] = 'green';
-            else program_body[j]['color'] = sym_program_body[i]['color'];
-            k = j + 1;
-            j = program_body.length;
-        }
-    }
-}
+
 
 function ColorAssignment(program,sym_program){
     let sym_program_body = ExtractFunctionFromProgram(sym_program)['body']['body'];
@@ -158,7 +181,16 @@ function ColorAssignment(program,sym_program){
     let k = 0;
     for(let i = 0; i<sym_program_body.length; i++){
         let sym_type = sym_program_body[i]['type'];
-        handler(k, program_body, sym_type, sym_program_body, i);
+        for (let j = k; j < program_body.length; j++) {
+            let org_type = program_body[j]['type'];
+            if (sym_type === org_type) {
+                if (sym_type === 'ReturnStatement') program_body[j]['color'] = 'green';
+                else GeneralColorHandler(program_body[j],sym_program_body[i]);
+                k = j + 1;
+                j = program_body.length;
+            }
+            else GeneralColorHandler(program_body[j],null,'green');
+        }
     }
     return program;
 }

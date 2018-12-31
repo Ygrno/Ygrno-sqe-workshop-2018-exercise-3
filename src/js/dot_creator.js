@@ -1,3 +1,4 @@
+const esgraph = require('esgraph');
 let number = 0;
 
 function createNode(color,shape,label){
@@ -20,8 +21,12 @@ function createArrow(from,to){
 function createArrowLabel(from,to,label){
     return from + ' -> ' + to + '[label = "' + label + '"]';
 }
-export{createNode,createArrow,createMergeNode,createArrowLabel};
 
-// function clear(){
-//     number = 0;
-// }
+function Esgraph(function_body){
+    return esgraph(function_body);
+}
+export{createNode,createArrow,createMergeNode,createArrowLabel,clear,Esgraph};
+
+function clear(){
+    number = 0;
+}

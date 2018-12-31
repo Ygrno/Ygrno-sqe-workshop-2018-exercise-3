@@ -1,33 +1,32 @@
 import $ from 'jquery';
-// import * as esco from 'escodegen';
+import * as esco from 'escodegen';
 import {parseCode_line} from './code-analyzer';
 import {SymbolicSubstitute} from './symbolic-substitution';
 import {EvalStatements,ColorAssignment,ExtractFunctionFromProgram} from './eval-statements';
-// import {CreateGraphObject,CreateMermaidString} from './code-visualization';
 import {Transform_CFG} from './cfg-transformation';
+import {Esgraph} from './dot_creator';
 import * as d3graphviz from 'd3-graphviz';
-const esgraph = require('esgraph');
+
 
 
 
 $(document).ready(function () {
     $('#codeSubmissionButton').click(() => {
+        let InputTextField = $('#function_input');
         let codeToParse = $('#codePlaceholder').val();
-        let inputVector = $('#function_input').val();
+        let inputVector = InputTextField.val();
         let parsedCode = parseCode_line(codeToParse);
-
         if(inputVector !== '') {
             let parsedCode_sym = SymbolicSubstitute(parsedCode);
+            InputTextField.val(esco.generate(parsedCode_sym));
             let parsedCode_sym_eval = EvalStatements(parsedCode_sym, inputVector)[1];
             parsedCode = ColorAssignment(parsedCode, parsedCode_sym_eval);
         }
-
-        let cfg = esgraph(ExtractFunctionFromProgram(parsedCode)['body']);
+        let cfg = Esgraph(ExtractFunctionFromProgram(parsedCode)['body']);
         let dot_string = Transform_CFG(cfg,'');
-        // let dot = esgraph.dot(cfg);
         let string = 'digraph G {' + dot_string + '}';
+        InputTextField.val(InputTextField.val() + '\n\n\n\n' + string);
         d3graphviz.graphviz('#this').renderDot(string);
-
     });
 });
 

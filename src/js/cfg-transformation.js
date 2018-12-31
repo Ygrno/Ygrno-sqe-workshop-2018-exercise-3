@@ -1,12 +1,11 @@
 import * as esco from 'escodegen';
 import {FixArray} from './symbolic-substitution';
-import {createNode,createArrow,createMergeNode,createArrowLabel} from './dot_creator';
+import {createNode,createArrow,createMergeNode,createArrowLabel,clear} from './dot_creator';
 
 function Transform_CFG(cfg,dot_string){
     dot_string = CreateAllNodes(cfg,dot_string);
     dot_string = ConnectNodes(cfg,dot_string);
-
-
+    clear();
     return dot_string;
 }
 
@@ -34,20 +33,11 @@ function ConnectNodes(cfg,dot_string){
             cfg_array[i]['false']['connector'] = false;
             cfg_array[i]['true']['connector'] = true;
         }
-        dot_string = previousRelations(cfg_array[i], dot_string);
     }
+    for(let j = 0; j<cfg_array.length; j++) dot_string = previousRelations(cfg_array[j], dot_string);
     return dot_string;
 }
 
-
-
-// let cfg_node_type = cfg_node['type'];
-// if(cfg_node_type === 'entry') return Transform_CFG(cfg_node['next'][0],dot_string);
-// else{
-//     let esprima_type = cfg_node['astNode']['type'];
-//     dot_string = Functions_parser[esprima_type](cfg_node,dot_string);
-// }
-// return dot_string;
 
 const Functions_parser = {
     ReturnStatement: Exp_Node,
@@ -69,7 +59,7 @@ function connectMany(dot_string, prev, cfg_node) {
     dot_string = dot_string + merge_node[1] + '\n';
     for (let j = 0; j < prev.length; j++) {
         let connector = cfg_node['connector'];
-        if (connector === undefined) {
+        if (connector === undefined || prev[j]['astNode']['type'] !== 'BinaryExpression') {
             let prev_name = prev[j]['name'];
             let relative = createArrow(prev_name, merge_node[0]);
             dot_string = dot_string + relative + '\n';
@@ -119,7 +109,7 @@ function VarDec_Node(cfg_node,dot_string){
         else data += esco.generate(declarations[i]) + '\n';
     }
     let node;
-    if(cfg_node['parent']['color'] === undefined) node = createNode('black','square',data);
+    if(cfg_node['astNode']['color'] === 'red') node = createNode('black','square',data);
     else node = createNode('green','square',data);
     cfg_node['color'] = node.color;
     cfg_node['name'] = node[0];
@@ -151,104 +141,3 @@ function Exp_Node(cfg_node,dot_string){
 
 
 export{Transform_CFG};
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-/*let number = 0;
-
-function GraphNode(shape,color,data,next_nodes,eval_true_node,eval_false_node,number,type){
-    this.shape = shape;
-    this.color = color;
-    this.data = data;
-    this.next_nodes = next_nodes;
-    this.eval_true_node = eval_true_node;
-    this.eval_false_node = eval_false_node;
-    this.number = number;
-    this.type = type;
-}
-
-function VarDec_handler(vardec_node){
-    let data = '';
-    let declarations = vardec_node['astNode']['declarations'];
-    for(let i = 0; i<declarations.length; i++){
-        if(i === declarations.length - 1) data += esco.generate(declarations[i]);
-        else data += esco.generate(declarations[i]) + '\n';
-    }
-    let next = vardec_node['next'], graph_node;
-    let next_new = [];
-    for(let j = 0; j<next.length; j++)
-    {
-        let node = CreateGraphObject(next[j]);
-        if(node != null) next_new.push(node);
-    }
-    graph_node = new GraphNode('square','white',data,next_new,null,null,number++,'regular');
-    return graph_node;
-}
-
-function Bin_handler(binary_node){
-    let data = esco.generate(binary_node['astNode']);
-    let false_path = binary_node['false'];
-    let new_false_path = null;
-    if(false_path != null) new_false_path = CreateGraphObject(false_path);
-    let true_path = binary_node['true'];
-    let new_true_path = null;
-    if(true_path != null) new_true_path = CreateGraphObject(true_path);
-    let next_new = [];
-    if(new_false_path != null) next_new.push(new_false_path);
-    if(new_true_path != null) next_new.push(new_true_path);
-    return new GraphNode('rhombus', 'white', data, next_new, new_true_path, new_false_path, number++, 'if');
-}
-
-function Ae_handler(ae_node){
-    let data = esco.generate(ae_node['astNode']);
-
-}
-
-const Functions_parser = {
-    VariableDeclaration: VarDec_handler,
-    BinaryExpression: Bin_handler,
-    AssignmentExpression: Ae_handler
-};
-
-
-function CreateGraphObject(cfg){
-    let type = cfg['type'];
-    if(type === 'entry') CreateGraphObject(cfg['next'][0]);
-    else if(type !== 'exit')
-    {
-        type = cfg['astNode']['type'];
-        return Functions_parser[type](cfg);
-    }
-    else return null;
-}
-
-
-function CreateMermaidString(graph, input){
-
-}
-
-
-export{CreateGraphObject,CreateMermaidString};*/
