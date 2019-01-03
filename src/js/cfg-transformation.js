@@ -43,7 +43,8 @@ const Functions_parser = {
     ReturnStatement: Exp_Node,
     AssignmentExpression: Exp_Node,
     BinaryExpression: Exp_Node,
-    VariableDeclaration: VarDec_Node};
+    VariableDeclaration: VarDec_Node,
+    UpdateExpression: Exp_Node};
 
 function FixPrev(prev, cfg_node) {
     if (prev.length > 0 && prev[0]['type'] === 'entry') {
